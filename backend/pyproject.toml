@@ -1,0 +1,51 @@
+[project]
+name = "tieba-auto-backend"
+version = "0.1.0"
+description = "贴吧自动化发布平台 - FastAPI 后端"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "fastapi>=0.115,<1",
+    "uvicorn[standard]>=0.30,<1",
+    "sqlalchemy>=2.0,<3",
+    "psycopg[binary]>=3.2,<4",
+    "alembic>=1.13,<2",
+    "pydantic>=2.7,<3",
+    "pydantic-settings>=2.3,<3",
+    "aiotieba>=4.8,<5",
+    "python-multipart>=0.0.20,<1",
+    "httpx>=0.27,<1",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8,<9",
+    "ruff>=0.6,<1",
+    "mypy>=1.10,<2",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["aiotieba", "aiotieba.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

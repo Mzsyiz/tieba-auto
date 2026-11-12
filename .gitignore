@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Node
+node_modules/
+.next/
+out/
+coverage/
+playwright-report/
+test-results/
+.runtime/
+*.dump
+windows/installers/*.exe
+windows/installers/*.msi
+windows/installers/*.zip
+
+# Env & secrets
+.env
+.env.local
+.env.*.local
+uploads/
+
+# OS / editors
+.DS_Store
+*.log
+.idea/
+.vscode/
