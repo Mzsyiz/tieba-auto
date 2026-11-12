@@ -99,6 +99,7 @@ function AutoSignPanel({
     if (previousRunning.current && !running) {
       queryClient.invalidateQueries({ queryKey: ["sign-overview"] });
       queryClient.invalidateQueries({ queryKey: ["sign-logs"] });
+      queryClient.invalidateQueries({ queryKey: ["account-forums"] });
     }
     previousRunning.current = running;
   }, [running, queryClient]);
@@ -153,6 +154,7 @@ function AutoSignPanel({
       queryClient.invalidateQueries({ queryKey: ["auto-sign-settings"] });
       queryClient.invalidateQueries({ queryKey: ["sign-overview"] });
       queryClient.invalidateQueries({ queryKey: ["sign-logs"] });
+      queryClient.invalidateQueries({ queryKey: ["account-forums"] });
       toast.success("自动签到已开始");
     },
     onError: (error: Error) => toast.error(`启动失败：${error.message}`),
@@ -164,6 +166,7 @@ function AutoSignPanel({
       queryClient.setQueryData(["auto-sign-status"], state);
       queryClient.invalidateQueries({ queryKey: ["sign-overview"] });
       queryClient.invalidateQueries({ queryKey: ["sign-logs"] });
+      queryClient.invalidateQueries({ queryKey: ["account-forums"] });
       toast.success("已发送停止指令");
     },
     onError: (error: Error) => toast.error(`停止失败：${error.message}`),

@@ -1,6 +1,10 @@
 import time
+from datetime import datetime
+
+from sqlalchemy import select
 
 from app.core.tieba import FollowActionResult, SignResult
+from app.models.account_forum import AccountForum
 
 
 def _setup_account_with_forums(client, monkeypatch, names: list[str]):
@@ -53,6 +57,36 @@ def test_sign_overview_starts_pending(client, monkeypatch):
         "banned": 0,
     }
     assert all(item["last_sign_status"] == "pending" for item in data["items"])
+
+
+def test_sign_overview_repairs_today_success_flag(
+    client,
+    db_session_factory,
+    monkeypatch,
+):
+    account, forum_ids = _setup_account_with_forums(
+        client,
+        monkeypatch,
+        ["修复签到状态吧"],
+    )
+    with db_session_factory() as db:
+        link = db.scalar(
+            select(AccountForum).where(
+                AccountForum.account_id == account["id"],
+                AccountForum.forum_id == forum_ids[0],
+            )
+        )
+        assert link is not None
+        link.is_signed = False
+        link.last_sign_status = "success"
+        link.last_sign_at = datetime.now().astimezone()
+        db.commit()
+
+    data = client.get(f"/api/v1/sign/accounts/{account['id']}").json()
+
+    assert data["stats"]["signed"] == 1
+    assert data["stats"]["pending"] == 0
+    assert data["items"][0]["is_signed"] is True
 
 
 def test_sign_selected_forum_writes_status_and_log(client, monkeypatch):

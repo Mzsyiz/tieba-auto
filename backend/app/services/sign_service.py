@@ -38,6 +38,14 @@ def reset_daily(db: Session, account_id: int) -> None:
             link.last_sign_status = "pending"
             link.sign_error = None
             changed = True
+        elif last_date == today:
+            if link.last_sign_status == "success" and not link.is_signed:
+                link.is_signed = True
+                link.sign_error = None
+                changed = True
+            elif link.last_sign_status == "failed" and link.is_signed:
+                link.is_signed = False
+                changed = True
     if changed:
         db.commit()
 

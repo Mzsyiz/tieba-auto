@@ -9,6 +9,7 @@ from app.models.account import Account
 from app.models.account_forum import AccountForum
 from app.models.forum import Forum
 from app.schemas.forum import ForumSyncResult
+from app.services.sign_service import local_date
 
 
 def _merge_suffix_duplicates(db: Session) -> int:
@@ -60,6 +61,7 @@ def sync_account_forums(
         ).all()
     }
     fetched_ids: set[int] = set()
+    today = local_date(now)
 
     for item in followed:
         forum = db.scalar(
@@ -90,7 +92,23 @@ def sync_account_forums(
             existing_links[forum.id] = link
         link.level = item.level
         link.is_followed = True
-        link.is_signed = item.is_signed
+        local_success_today = (
+            link.last_sign_status == "success"
+            and local_date(link.last_sign_at) == today
+        )
+        if local_success_today:
+            link.is_signed = True
+        elif item.is_signed:
+            link.is_signed = True
+            if (
+                link.last_sign_status != "success"
+                or local_date(link.last_sign_at) != today
+            ):
+                link.last_sign_status = "success"
+                link.last_sign_at = now
+                link.sign_error = None
+        else:
+            link.is_signed = False
         link.hot_num = item.hot_num
         link.member_count = item.member_count
         link.today_thread_num = item.today_thread_num

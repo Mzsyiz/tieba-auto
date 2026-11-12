@@ -1,3 +1,7 @@
+from datetime import datetime
+
+from sqlalchemy import select
+
 from app.core.tieba import FollowActionResult, FollowedForum
 from app.models.account_forum import AccountForum
 
@@ -92,7 +96,7 @@ def test_update_forum_status(client):
     assert unbanned.json()["ban_reason"] is None
 
 
-def test_sync_followed_forums(client, monkeypatch):
+def test_sync_followed_forums(client, db_session_factory, monkeypatch):
     account = client.post(
         "/api/v1/accounts",
         json={"username": "sync_account", "bduss": "x" * 192, "status": "valid"},
@@ -112,6 +116,18 @@ def test_sync_followed_forums(client, monkeypatch):
     assert body["added"] == 2
     assert body["account_name"] == "sync_account"
 
+    with db_session_factory() as db:
+        link = db.scalar(
+            select(AccountForum)
+            .where(AccountForum.account_id == account["id"])
+            .order_by(AccountForum.id)
+        )
+        assert link is not None
+        link.is_signed = True
+        link.last_sign_status = "success"
+        link.last_sign_at = datetime.now().astimezone()
+        db.commit()
+
     again = client.post("/api/v1/forums/sync", json={"account_id": account["id"]})
     assert again.status_code == 200
     assert again.json()["added"] == 0
@@ -122,6 +138,7 @@ def test_sync_followed_forums(client, monkeypatch):
     data = account_forums.json()
     assert data["total"] == 2
     assert data["stats"]["followed"] == 2
+    assert data["stats"]["signed"] == 1
     assert {item["fname"] for item in data["items"]} == {"同步吧一", "同步吧二"}
 
     followed_only = client.get(

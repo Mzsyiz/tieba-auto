@@ -34,6 +34,7 @@ import {
 import { ForumHeader } from "@/features/forums/forum-header";
 import { useAccountContext } from "@/hooks/use-account-context";
 import type { Account } from "@/lib/api/accounts";
+import { getAutoSignStatus } from "@/lib/api/auto-sign";
 import { syncForums } from "@/lib/api/forums";
 import {
   getSignOverview,
@@ -181,11 +182,29 @@ function SignPanel({
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const autoSyncAttempted = useRef(new Set<number>());
+  const previousAutoRunning = useRef(false);
+
+  const autoSignStatusQuery = useQuery({
+    queryKey: ["auto-sign-status"],
+    queryFn: getAutoSignStatus,
+    refetchInterval: (query) => (query.state.data?.running ? 2000 : false),
+  });
+  const autoSignRunning = autoSignStatusQuery.data?.running ?? false;
+
+  useEffect(() => {
+    if (previousAutoRunning.current && !autoSignRunning) {
+      queryClient.invalidateQueries({ queryKey: ["sign-overview"] });
+      queryClient.invalidateQueries({ queryKey: ["sign-logs"] });
+      queryClient.invalidateQueries({ queryKey: ["account-forums"] });
+    }
+    previousAutoRunning.current = autoSignRunning;
+  }, [autoSignRunning, queryClient]);
 
   const { data = EMPTY_OVERVIEW, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["sign-overview", accountId],
     queryFn: () => getSignOverview(accountId as number),
     enabled: accountId !== null,
+    refetchInterval: autoSignRunning ? 2500 : false,
   });
 
   const { data: logs = { items: [] } as SignLogList } = useQuery({
